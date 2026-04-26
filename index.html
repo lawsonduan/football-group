@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>足球比赛分组系统</title>
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --success: #34a853;
+            --danger: #ea4335;
+            --warning: #fbbc04;
+            --dark: #202124;
+            --gray: #5f6368;
+            --light: #f8f9fa;
+            --white: #ffffff;
+            --shadow: 0 2px 8px rgba(0,0,0,0.1);
+            --radius: 12px;
+            --team-a: #4285f4;
+            --team-b: #34a853;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--dark);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: var(--white);
+            margin-bottom: 30px;
+        }
+        
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        header p {
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: var(--white);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .card h2 {
+            font-size: 1.3rem;
+            margin-bottom: 16px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: var(--white);
+        }
+        
+        .btn-primary:hover {
+            background: #1557b0;
+            transform: translateY(-1px);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: var(--white);
+        }
+        
+        .btn-success:hover {
+            background: #2d8f47;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: var(--white);
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            color: var(--dark);
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .player-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+        }
+        
+        .player-card {
+            background: var(--light);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        
+        .player-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+        
+        .player-card.selected {
+            border-color: var(--success);
+            background: #e6f4ea;
+        }
+        
+        .player-card .checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--gray);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .player-card.selected .checkbox {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+        
+        .player-card .info {
+            flex: 1;
+        }
+        
+        .player-card .name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .player-card .position {
+            font-size: 12px;
+            color: var(--gray);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .position-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .position-fw { background: #ffebee; color: #c62828; }
+        .position-mf { background: #e3f2fd; color: #1565c0; }
+        .position-df { background: #e8f5e9; color: #2e7d32; }
+        .position-all { background: #fff3e0; color: #ef6c00; }
+        .position-none { background: #f5f5f5; color: #9e9e9e; }
+        
+        .player-card .actions {
+            display: flex;
+            gap: 4px;
+            opacity: 1;
+            transition: opacity 0.2s;
+        }
+        
+        .player-card .actions .btn-icon {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        
+        .btn-edit { background: #e3f2fd; color: #1976d2; }
+        .btn-edit:hover { background: #bbdefb; }
+        
+        .btn-delete { background: #ffebee; color: #c62828; }
+        .btn-delete:hover { background: #ffcdd2; }
+        
+        .result-section {
+            display: none;
+        }
+        
+        .result-section.active {
+            display: block;
+        }
+        
+        .teams-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .team {
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        
+        .team-a .team-header { background: var(--team-a); }
+        .team-b .team-header { background: var(--team-b); }
+        
+        .team-header {
+            color: white;
+            padding: 16px;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        .team-content {
+            padding: 16px;
+            background: #fafafa;
+        }
+        
+        .team-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+        
+        .stat-item strong {
+            color: var(--dark);
+        }
+        
+        .team-players {
+            list-style: none;
+        }
+        
+        .team-players li {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .team-players li:last-child {
+            border-bottom: none;
+        }
+        
+        .team-players .player-name {
+            font-weight: 500;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--gray);
+        }
+        
+        .search-box {
+            position: relative;
+            margin-bottom: 16px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+            box-shadow: var(--shadow);
+        }
+        
+        .search-results.show {
+            display: block;
+        }
+        
+        .search-result-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+        
+        .search-result-item:hover {
+            background: var(--light);
+        }
+        
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-overlay.show {
+            display: flex;
+        }
+        
+        .modal {
+            background: white;
+            border-radius: var(--radius);
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            animation: slideUp 0.3s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal h3 {
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 16px;
+            background: var(--light);
+            padding: 4px;
+            border-radius: 8px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 10px 16px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .tab.active {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .player-detail {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: var(--light);
+            border-radius: 8px;
+        }
+        
+        .player-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--team-a), var(--team-b));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .player-info h3 {
+            margin-bottom: 4px;
+        }
+        
+        .player-info p {
+            color: var(--gray);
+            font-size: 14px;
+        }
+        
+        .no-result {
+            text-align: center;
+            padding: 40px;
+            color: var(--gray);
+        }
+        
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .player-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            }
+            
+            .teams-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚽ 足球比赛分组系统</h1>
+            <p>公平竞赛，快乐足球</p>
+        </header>
+        
+        <div class="card">
+            <h2>🔍 查询球员</h2>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="输入球员姓名搜索...">
+                <div class="search-results" id="searchResults"></div>
+            </div>
+            <div id="playerDetail"></div>
+        </div>
+        
+        <div class="card">
+            <h2>👥 球员名单 <span id="selectedCount">(0人已选)</span></h2>
+            <div class="tabs">
+                <button class="tab active" data-tab="all">全部</button>
+                <button class="tab" data-tab="fw">前锋</button>
+                <button class="tab" data-tab="mf">中场</button>
+                <button class="tab" data-tab="df">后卫</button>
+                <button class="tab" data-tab="allpos">多面手</button>
+            </div>
+            <div class="btn-group" style="margin-bottom: 16px;">
+                <button class="btn btn-primary" onclick="selectAll()">全选</button>
+                <button class="btn btn-warning" onclick="clearSelection()">清空</button>
+                <button class="btn btn-success" onclick="randomizeTeams()">🎲 随机分组</button>
+                <button class="btn btn-danger" onclick="resetPlayers()">重置数据</button>
+                <button class="btn btn-primary" onclick="openAddModal()">➕ 添加球员</button>
+            </div>
+            <div class="player-grid" id="playerGrid"></div>
+        </div>
+        
+        <div class="card result-section" id="resultSection">
+            <h2>🏆 分组结果</h2>
+            <div class="btn-group" style="margin-bottom: 16px;">
+                <button class="btn btn-primary" onclick="unlockGrouping()">🔓 调整分组</button>
+                <button class="btn btn-success" onclick="randomizeTeams()">🎲 重新随机分组</button>
+            </div>
+            <div class="teams-container">
+                <div class="team team-a">
+                    <div class="team-header">
+                        A队 <span id="teamACount">(0人)</span>
+                    </div>
+                    <div class="team-content">
+                        <div class="team-stats" id="teamAStats"></div>
+                        <ul class="team-players" id="teamAPlayers"></ul>
+                    </div>
+                </div>
+                <div class="team team-b">
+                    <div class="team-header">
+                        B队 <span id="teamBCount">(0人)</span>
+                    </div>
+                    <div class="team-content">
+                        <div class="team-stats" id="teamBStats"></div>
+                        <ul class="team-players" id="teamBPlayers"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加球员弹窗 -->
+    <div class="modal-overlay" id="addModal">
+        <div class="modal">
+            <h3>➕ 添加球员</h3>
+            <div class="form-group">
+                <label>球员姓名</label>
+                <input type="text" id="addName" placeholder="请输入球员姓名">
+            </div>
+            <div class="form-group">
+                <label>位置</label>
+                <select id="addPosition">
+                    <option value="">-- 选择位置 --</option>
+                    <option value="fw">前锋</option>
+                    <option value="mf">中场</option>
+                    <option value="df">后卫</option>
+                    <option value="all">多面手</option>
+                    <option value="none">无</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-warning" onclick="closeAddModal()">取消</button>
+                <button class="btn btn-success" onclick="saveAdd()">添加</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="editModal">
+        <div class="modal">
+            <h3>✏️ 编辑球员</h3>
+            <div class="form-group">
+                <label>球员姓名</label>
+                <input type="text" id="editName" placeholder="请输入姓名">
+            </div>
+            <div class="form-group">
+                <label>位置</label>
+                <select id="editPosition">
+                    <option value="">-- 选择位置 --</option>
+                    <option value="fw">前锋</option>
+                    <option value="mf">中场</option>
+                    <option value="df">后卫</option>
+                    <option value="all">多面手</option>
+                    <option value="none">无</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-warning" onclick="closeModal()">取消</button>
+                <button class="btn btn-success" onclick="saveEdit()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const defaultPlayers = [
+            { id: 1, name: 'C罗', position: 'fw' },
+            { id: 2, name: '梅西', position: 'fw' },
+            { id: 3, name: '姆巴佩', position: 'fw' },
+            { id: 4, name: '哈兰德', position: 'fw' },
+            { id: 5, name: '莱万', position: 'fw' },
+            { id: 6, name: '凯恩', position: 'fw' },
+            { id: 7, name: '内马尔', position: 'fw' },
+            { id: 8, name: '德布劳内', position: 'mf' },
+            { id: 9, name: '莫德里奇', position: 'mf' },
+            { id: 10, name: '克罗斯', position: 'mf' },
+            { id: 11, name: 'B席', position: 'mf' },
+            { id: 12, name: '厄德高', position: 'mf' },
+            { id: 13, name: '维拉蒂', position: 'mf' },
+            { id: 14, name: '罗德里', position: 'mf' },
+            { id: 15, name: '赖斯', position: 'mf' },
+            { id: 16, name: '范戴克', position: 'df' },
+            { id: 17, name: '迪亚斯', position: 'df' },
+            { id: 18, name: '萨利巴', position: 'df' },
+            { id: 19, name: '格瓦迪奥尔', position: 'df' },
+            { id: 20, name: '阿劳霍', position: 'df' },
+            { id: 21, name: '德里赫特', position: 'df' },
+            { id: 22, name: '坎塞洛', position: 'df' },
+            { id: 23, name: '卡马文加', position: 'all' },
+            { id: 24, name: '楚阿梅尼', position: 'all' },
+            { id: 25, name: '贝林厄姆', position: 'all' },
+            { id: 26, name: '福登', position: 'all' },
+            { id: 27, name: '萨卡', position: 'all' },
+            { id: 28, name: '拉什福德', position: 'fw' },
+            { id: 29, name: '格拉利什', position: 'mf' },
+            { id: 30, name: '马赫雷斯', position: 'fw' },
+            { id: 31, name: '阿尔瓦雷斯', position: 'fw' },
+            { id: 32, name: '罗德里戈', position: 'fw' },
+            { id: 33, name: '维尼修斯', position: 'fw' }
+        ];
+        
+        const positionNames = {
+            fw: '前锋',
+            mf: '中场',
+            df: '后卫',
+            all: '多面手'
+        };
+        
+        let players = [];
+        let selectedIds = new Set();
+        let currentEditId = null;
+        let isGrouped = false;  // 分组是否已锁定
+        let teamAResult = [];
+        let teamBResult = [];
+        
+        function init() {
+            const saved = localStorage.getItem('football_players');
+            if (saved) {
+                players = JSON.parse(saved);
+            } else {
+                players = [...defaultPlayers];
+                savePlayers();
+            }
+            
+            const savedSelection = localStorage.getItem('football_selected');
+            if (savedSelection) {
+                selectedIds = new Set(JSON.parse(savedSelection));
+            }
+            
+            loadTeams();
+            renderPlayers();
+            renderResult();
+        }
+        
+        function savePlayers() {
+            localStorage.setItem('football_players', JSON.stringify(players));
+        }
+        
+        function saveSelection() {
+            localStorage.setItem('football_selected', JSON.stringify([...selectedIds]));
+        }
+        
+        function saveTeams() {
+            localStorage.setItem('football_teamA', JSON.stringify(teamAResult));
+            localStorage.setItem('football_teamB', JSON.stringify(teamBResult));
+            localStorage.setItem('football_isGrouped', JSON.stringify(isGrouped));
+        }
+        
+        function loadTeams() {
+            const savedTeamA = localStorage.getItem('football_teamA');
+            const savedTeamB = localStorage.getItem('football_teamB');
+            const savedGrouped = localStorage.getItem('football_isGrouped');
+            
+            if (savedTeamA && savedTeamB) {
+                teamAResult = JSON.parse(savedTeamA);
+                teamBResult = JSON.parse(savedTeamB);
+                isGrouped = savedGrouped === 'true';
+            }
+        }
+        
+        function renderPlayers(filter = 'all') {
+            const grid = document.getElementById('playerGrid');
+            grid.innerHTML = '';
+            
+            // 如果已分组，只显示已选中的球员（按队伍分组显示）
+            if (isGrouped) {
+                const allGrouped = [...teamAResult, ...teamBResult];
+                allGrouped.forEach(player => {
+                    const card = document.createElement('div');
+                    card.className = 'player-card selected';
+                    card.style.cursor = 'default';
+                    
+                    const posClass = `position-${player.position}`;
+                    card.innerHTML = `
+                        <div class="checkbox">✓</div>
+                        <div class="info">
+                            <div class="name">${player.name}</div>
+                            <div class="position">
+                                <span class="position-tag ${posClass}">${positionNames[player.position]}</span>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+                document.getElementById('selectedCount').textContent = `(${selectedIds.size}人已选，已分组锁定)`;
+                return;
+            }
+            
+            // 分组前：根据tab筛选，只显示未选中的球员
+            let filtered = players;
+            if (filter !== 'all') {
+                filtered = players.filter(p => {
+                    if (filter === 'allpos') return p.position === 'all';
+                    return p.position === filter;
+                });
+            }
+            
+            filtered.forEach(player => {
+                const card = document.createElement('div');
+                card.className = `player-card ${selectedIds.has(player.id) ? 'selected' : ''}`;
+                card.onclick = (e) => {
+                    // 如果点击的是编辑/删除按钮，不触发选择
+                    if (e.target.closest('.actions')) return;
+                    toggleSelect(player.id);
+                };
+                
+                const posClass = player.position ? `position-${player.position}` : 'position-none';
+                const posName = player.position ? positionNames[player.position] : '无';
+                
+                card.innerHTML = `
+                    <div class="checkbox">${selectedIds.has(player.id) ? '✓' : ''}</div>
+                    <div class="info">
+                        <div class="name">${player.name}</div>
+                        <div class="position">
+                            <span class="position-tag ${posClass}">${posName}</span>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button class="btn-Icon btn-edit" onclick="openEditModal(${player.id})" title="编辑">✏️</button>
+                        <button class="btn-Icon btn-delete" onclick="deletePlayer(${player.id})" title="删除">🗑️</button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            
+            document.getElementById('selectedCount').textContent = `(${selectedIds.size}人已选)`;
+        }
+        
+        function toggleSelect(id) {
+            if (selectedIds.has(id)) {
+                selectedIds.delete(id);
+            } else {
+                selectedIds.add(id);
+            }
+            saveSelection();
+            renderPlayers();
+            renderResult();
+        }
+        
+        function selectAll() {
+            players.forEach(p => selectedIds.add(p.id));
+            saveSelection();
+            renderPlayers();
+            renderResult();
+        }
+        
+        function clearSelection() {
+            selectedIds.clear();
+            saveSelection();
+            renderPlayers();
+            renderResult();
+        }
+        
+        function resetPlayers() {
+            if (confirm('确定要重置所有球员数据吗？')) {
+                players = [...defaultPlayers];
+                selectedIds.clear();
+                isGrouped = false;
+                teamAResult = [];
+                teamBResult = [];
+                savePlayers();
+                saveSelection();
+                saveTeams();
+                renderPlayers();
+                renderResult();
+            }
+        }
+        
+        function unlockGrouping() {
+            // 解除分组锁定，允许重新调整
+            isGrouped = false;
+            document.getElementById('resultSection').classList.remove('active');
+            renderPlayers();
+        }
+        
+        function shuffle(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+        
+        function randomizeTeams() {
+            if (selectedIds.size < 2) {
+                alert('请至少选择2名球员进行分组！');
+                return;
+            }
+            
+            // 锁定分组状态
+            isGrouped = true;
+            
+            const selectedPlayers = players.filter(p => selectedIds.has(p.id));
+            
+            const fw = selectedPlayers.filter(p => p.position === 'fw');
+            const mf = selectedPlayers.filter(p => p.position === 'mf');
+            const df = selectedPlayers.filter(p => p.position === 'df');
+            const all = selectedPlayers.filter(p => p.position === 'all');
+            
+            const teamA = [];
+            const teamB = [];
+            
+            const distribute = (players, preferA = true) => {
+                const shuffled = shuffle(players);
+                shuffled.forEach((p, i) => {
+                    if ((preferA && i % 2 === 0) || (!preferA && i % 2 === 1)) {
+                        teamA.push(p);
+                    } else {
+                        teamB.push(p);
+                    }
+                });
+            };
+            
+            distribute(fw, true);
+            distribute(mf, false);
+            distribute(df, true);
+            distribute(all, false);
+            
+            // 确保两队人数差距最多为1
+            const total = teamA.length + teamB.length;
+            const targetA = Math.floor(total / 2);
+            const targetB = total - targetA;
+            
+            // 如果差距大于1，调整人数
+            while (Math.abs(teamA.length - teamB.length) > 1) {
+                if (teamA.length > teamB.length + 1) {
+                    const player = teamA.pop();
+                    teamB.push(player);
+                } else if (teamB.length > teamA.length + 1) {
+                    const player = teamB.pop();
+                    teamA.push(player);
+                }
+            }
+            
+            teamAResult = shuffle(teamA);
+            teamBResult = shuffle(teamB);
+            
+            saveTeams();
+            displayResult(teamAResult, teamBResult);
+            renderPlayers();
+        }
+        
+        function displayResult(teamA, teamB) {
+            document.getElementById('resultSection').classList.add('active');
+            
+            document.getElementById('teamACount').textContent = `(${teamA.length}人)`;
+            document.getElementById('teamBCount').textContent = `(${teamB.length}人)`;
+            
+            const statsA = getTeamStats(teamA);
+            const statsB = getTeamStats(teamB);
+            
+            document.getElementById('teamAStats').innerHTML = `
+                <div class="stat-item">前锋: <strong>${statsA.fw}</strong></div>
+                <div class="stat-item">中场: <strong>${statsA.mf}</strong></div>
+                <div class="stat-item">后卫: <strong>${statsA.df}</strong></div>
+                <div class="stat-item">多面手: <strong>${statsA.all}</strong></div>
+            `;
+            
+            document.getElementById('teamBStats').innerHTML = `
+                <div class="stat-item">前锋: <strong>${statsB.fw}</strong></div>
+                <div class="stat-item">中场: <strong>${statsB.mf}</strong></div>
+                <div class="stat-item">后卫: <strong>${statsB.df}</strong></div>
+                <div class="stat-item">多面手: <strong>${statsB.all}</strong></div>
+            `;
+            
+            const renderPlayersList = (list) => {
+                return list.map(p => `
+                    <li>
+                        <span class="player-name">${p.name}</span>
+                        <span class="position-tag position-${p.position}">${positionNames[p.position]}</span>
+                    </li>
+                `).join('');
+            };
+            
+            document.getElementById('teamAPlayers').innerHTML = renderPlayersList(teamA);
+            document.getElementById('teamBPlayers').innerHTML = renderPlayersList(teamB);
+            
+            document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function getTeamStats(team) {
+            return {
+                fw: team.filter(p => p.position === 'fw').length,
+                mf: team.filter(p => p.position === 'mf').length,
+                df: team.filter(p => p.position === 'df').length,
+                all: team.filter(p => p.position === 'all').length
+            };
+        }
+        
+        function renderResult() {
+            // 分组锁定后不再自动重算
+            if (isGrouped) {
+                displayResult(teamAResult, teamBResult);
+                return;
+            }
+            // 分组前不显示结果
+            document.getElementById('resultSection').classList.remove('active');
+        }
+        
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                renderPlayers(tab.dataset.tab);
+            });
+        });
+        
+        const searchInput = document.getElementById('searchInput');
+        const searchResults = document.getElementById('searchResults');
+        
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            if (query.length < 1) {
+                searchResults.classList.remove('show');
+                return;
+            }
+            
+            const results = players.filter(p => p.name.includes(query));
+            
+            if (results.length > 0) {
+                searchResults.innerHTML = results.map(p => `
+                    <div class="search-result-item" onclick="showPlayerDetail(${p.id})">
+                        <strong>${p.name}</strong> - ${positionNames[p.position]}
+                        ${selectedIds.has(p.id) ? ' ✅' : ''}
+                    </div>
+                `).join('');
+                searchResults.classList.add('show');
+            } else {
+                searchResults.innerHTML = '<div class="search-result-item">未找到球员</div>';
+                searchResults.classList.add('show');
+            }
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-box')) {
+                searchResults.classList.remove('show');
+            }
+        });
+        
+        function showPlayerDetail(id) {
+            const player = players.find(p => p.id === id);
+            if (!player) return;
+            
+            searchResults.classList.remove('show');
+            searchInput.value = player.name;
+            
+            const posClass = `position-${player.position}`;
+            const detail = document.getElementById('playerDetail');
+            detail.innerHTML = `
+                <div class="player-detail">
+                    <div class="player-avatar">${player.name.charAt(0)}</div>
+                    <div class="player-info">
+                        <h3>${player.name}</h3>
+                        <p>
+                            位置: <span class="position-tag ${posClass}">${positionNames[player.position]}</span>
+                            | 状态: ${selectedIds.has(player.id) ? '✅ 已报名' : '❌ 未报名'}
+                        </p>
+                        <div style="margin-top: 10px;">
+                            <button class="btn btn-primary" onclick="toggleSelect(${player.id})">
+                                ${selectedIds.has(player.id) ? '取消报名' : '立即报名'}
+                            </button>
+                            <button class="btn btn-warning" onclick="openEditModal(${player.id})">编辑</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function openEditModal(id) {
+            const player = players.find(p => p.id === id);
+            if (!player) return;
+            
+            currentEditId = id;
+            document.getElementById('editName').value = player.name;
+            document.getElementById('editPosition').value = player.position || '';
+            document.getElementById('editModal').classList.add('show');
+        }
+        
+        function openAddModal() {
+            document.getElementById('addName').value = '';
+            document.getElementById('addPosition').value = '';
+            document.getElementById('addModal').classList.add('show');
+            document.getElementById('addName').focus();
+        }
+        
+        function closeAddModal() {
+            document.getElementById('addModal').classList.remove('show');
+        }
+        
+        function saveAdd() {
+            const name = document.getElementById('addName').value.trim();
+            const position = document.getElementById('addPosition').value;
+            
+            if (!name) {
+                alert('请输入球员姓名');
+                return;
+            }
+            
+            const newId = Math.max(...players.map(p => p.id), 0) + 1;
+            const newPlayer = { 
+                id: newId, 
+                name, 
+                position: position || 'none' 
+            };
+            
+            players.push(newPlayer);
+            savePlayers();
+            renderPlayers();
+            
+            closeAddModal();
+        }
+        
+        function deletePlayer(id) {
+            if (!confirm('确定要删除该球员吗？')) return;
+            
+            players = players.filter(p => p.id !== id);
+            selectedIds.delete(id);
+            savePlayers();
+            saveSelection();
+            renderPlayers();
+            renderResult();
+        }
+        
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('show');
+            currentEditId = null;
+        }
+        
+        function saveEdit() {
+            const name = document.getElementById('editName').value.trim();
+            const position = document.getElementById('editPosition').value;
+            
+            if (!name) {
+                alert('请输入球员姓名');
+                return;
+            }
+            
+            const idx = players.findIndex(p => p.id === currentEditId);
+            if (idx !== -1) {
+                players[idx] = { ...players[idx], name, position: position || 'none' };
+                savePlayers();
+                renderPlayers();
+                renderResult();
+                
+                const detailDiv = document.getElementById('playerDetail');
+                if (detailDiv.innerHTML) {
+                    showPlayerDetail(currentEditId);
+                }
+            }
+            
+            closeModal();
+        }
+        
+        init();
+    </script>
+</body>
+</html>
