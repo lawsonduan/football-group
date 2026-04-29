@@ -191,6 +191,7 @@
         .position-fw { background: #ffebee; color: #c62828; }
         .position-mf { background: #e3f2fd; color: #1565c0; }
         .position-df { background: #e8f5e9; color: #2e7d32; }
+        .position-gk { background: #f3e5f5; color: #7b1fa2; }
         .position-all { background: #fff3e0; color: #ef6c00; }
         .position-none { background: #f5f5f5; color: #9e9e9e; }
         
@@ -531,6 +532,7 @@
                 <button class="tab" data-tab="fw">前锋</button>
                 <button class="tab" data-tab="mf">中场</button>
                 <button class="tab" data-tab="df">后卫</button>
+                <button class="tab" data-tab="gk">守门员</button>
                 <button class="tab" data-tab="allpos">多面手</button>
             </div>
             <div class="btn-group" style="margin-bottom: 16px;">
@@ -587,6 +589,7 @@
                     <option value="fw">前锋</option>
                     <option value="mf">中场</option>
                     <option value="df">后卫</option>
+                    <option value="gk">守门员</option>
                     <option value="all">多面手</option>
                     <option value="none">无</option>
                 </select>
@@ -612,6 +615,7 @@
                     <option value="fw">前锋</option>
                     <option value="mf">中场</option>
                     <option value="df">后卫</option>
+                    <option value="gk">守门员</option>
                     <option value="all">多面手</option>
                     <option value="none">无</option>
                 </select>
@@ -657,14 +661,19 @@
             { id: 30, name: '马赫雷斯', position: 'fw' },
             { id: 31, name: '阿尔瓦雷斯', position: 'fw' },
             { id: 32, name: '罗德里戈', position: 'fw' },
-            { id: 33, name: '维尼修斯', position: 'fw' }
+            { id: 33, name: '维尼修斯', position: 'fw' },
+            { id: 34, name: '诺伊尔', position: 'gk' },
+            { id: 35, name: '库尔图瓦', position: 'gk' },
+            { id: 36, name: '阿利森', position: 'gk' }
         ];
         
         const positionNames = {
             fw: '前锋',
             mf: '中场',
             df: '后卫',
-            all: '多面手'
+            gk: '守门员',
+            all: '多面手',
+            none: '无'
         };
         
         let players = [];
@@ -813,15 +822,16 @@
         }
         
         function resetPlayers() {
-            if (confirm('确定要重置所有球员数据吗？')) {
-                players = [...defaultPlayers];
+            if (confirm('确定要重置吗？这将清空当前的选择和分组，但保留球员名单。\n\n如需恢复默认球员，请刷新页面。')) {
+                // 只重置选择和分组状态，不修改球员列表
                 selectedIds.clear();
                 isGrouped = false;
                 teamAResult = [];
                 teamBResult = [];
-                savePlayers();
+                
                 saveSelection();
                 saveTeams();
+                
                 renderPlayers();
                 renderResult();
             }
@@ -854,10 +864,13 @@
             
             const selectedPlayers = players.filter(p => selectedIds.has(p.id));
             
+            // 按位置分类，包括守门员(gk)和无位置(none)
             const fw = selectedPlayers.filter(p => p.position === 'fw');
             const mf = selectedPlayers.filter(p => p.position === 'mf');
             const df = selectedPlayers.filter(p => p.position === 'df');
+            const gk = selectedPlayers.filter(p => p.position === 'gk');
             const all = selectedPlayers.filter(p => p.position === 'all');
+            const none = selectedPlayers.filter(p => p.position === 'none' || !p.position);
             
             const teamA = [];
             const teamB = [];
@@ -873,10 +886,15 @@
                 });
             };
             
+            // 守门员优先分配，尽量保证每队最多一个
+            if (gk.length > 0) {
+                distribute(gk, true);
+            }
             distribute(fw, true);
             distribute(mf, false);
             distribute(df, true);
             distribute(all, false);
+            distribute(none, true); // 无位置的球员也参与分组
             
             // 确保两队人数差距最多为1
             const total = teamA.length + teamB.length;
@@ -915,14 +933,18 @@
                 <div class="stat-item">前锋: <strong>${statsA.fw}</strong></div>
                 <div class="stat-item">中场: <strong>${statsA.mf}</strong></div>
                 <div class="stat-item">后卫: <strong>${statsA.df}</strong></div>
+                <div class="stat-item">守门员: <strong>${statsA.gk}</strong></div>
                 <div class="stat-item">多面手: <strong>${statsA.all}</strong></div>
+                <div class="stat-item">无位置: <strong>${statsA.none}</strong></div>
             `;
             
             document.getElementById('teamBStats').innerHTML = `
                 <div class="stat-item">前锋: <strong>${statsB.fw}</strong></div>
                 <div class="stat-item">中场: <strong>${statsB.mf}</strong></div>
                 <div class="stat-item">后卫: <strong>${statsB.df}</strong></div>
+                <div class="stat-item">守门员: <strong>${statsB.gk}</strong></div>
                 <div class="stat-item">多面手: <strong>${statsB.all}</strong></div>
+                <div class="stat-item">无位置: <strong>${statsB.none}</strong></div>
             `;
             
             const renderPlayersList = (list) => {
@@ -945,7 +967,9 @@
                 fw: team.filter(p => p.position === 'fw').length,
                 mf: team.filter(p => p.position === 'mf').length,
                 df: team.filter(p => p.position === 'df').length,
-                all: team.filter(p => p.position === 'all').length
+                gk: team.filter(p => p.position === 'gk').length,
+                all: team.filter(p => p.position === 'all').length,
+                none: team.filter(p => p.position === 'none' || !p.position).length
             };
         }
         
@@ -1063,7 +1087,7 @@
             const newPlayer = { 
                 id: newId, 
                 name, 
-                position: position || 'none' 
+                position: position || 'none'
             };
             
             players.push(newPlayer);
@@ -1071,6 +1095,11 @@
             renderPlayers();
             
             closeAddModal();
+        }
+        
+        function saveUserAddedPlayers() {
+            const userAdded = players.filter(p => p.isUserAdded);
+            localStorage.setItem('football_userAdded', JSON.stringify(userAdded));
         }
         
         function deletePlayer(id) {
