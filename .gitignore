@@ -1,0 +1,23 @@
+# Rust
+/target/
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+
+# Uploaded files
+/uploads/
+
+# Node
+web/node_modules/
+web/dist/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
