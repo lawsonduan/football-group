@@ -1,6 +1,15 @@
 export type Position = 'fw' | 'mf' | 'df' | 'gk' | 'all' | 'none'
 
-export interface Player {
+export interface PlayerStats {
+  pac: number
+  sho: number
+  pas: number
+  dri: number
+  def: number
+  phy: number
+}
+
+export interface Player extends PlayerStats {
   id: number
   name: string
   position: Position

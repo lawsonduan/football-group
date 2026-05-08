@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { playersApi } from '../api'
-import type { Player } from '../types'
+import type { Player, PlayerStats } from '../types'
 
 export const usePlayerStore = defineStore('players', () => {
   const players = ref<Player[]>([])
@@ -20,14 +20,14 @@ export const usePlayerStore = defineStore('players', () => {
     }
   }
 
-  async function add(name: string, position: string) {
-    const p = await playersApi.create(name, position)
+  async function add(name: string, position: string, stats?: PlayerStats) {
+    const p = await playersApi.create(name, position, stats)
     players.value.push(p)
     return p
   }
 
-  async function update(id: number, name: string, position: string) {
-    const p = await playersApi.update(id, name, position)
+  async function update(id: number, name: string, position: string, stats?: PlayerStats) {
+    const p = await playersApi.update(id, name, position, stats)
     const idx = players.value.findIndex((x) => x.id === id)
     if (idx !== -1) players.value[idx] = p
     return p

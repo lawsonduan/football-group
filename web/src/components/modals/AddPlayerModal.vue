@@ -2,8 +2,11 @@
 import { ref, nextTick, onMounted } from 'vue'
 import { usePlayerStore } from '../../stores/players'
 import { playersApi } from '../../api'
+import type { PlayerStats } from '../../types'
+import { DEFAULT_STATS } from '../../utils/stats'
 import AppModal from '../AppModal.vue'
 import AvatarUploadInput from '../AvatarUploadInput.vue'
+import StatsEditor from '../StatsEditor.vue'
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -12,7 +15,9 @@ const playerStore = usePlayerStore()
 const name = ref('')
 const position = ref('')
 const avatarFile = ref<File | null>(null)
+const stats = ref<PlayerStats>({ ...DEFAULT_STATS })
 const inputRef = ref<HTMLInputElement | null>(null)
+const showStats = ref(false)
 
 onMounted(() => nextTick(() => inputRef.value?.focus()))
 
@@ -20,10 +25,9 @@ async function submit() {
   const n = name.value.trim()
   if (!n) { alert('请输入球员姓名'); return }
   try {
-    let player = await playerStore.add(n, position.value || 'none')
+    let player = await playerStore.add(n, position.value || 'none', stats.value)
     if (avatarFile.value) {
       player = await playersApi.uploadAvatar(player.id, avatarFile.value)
-      // Sync the updated player (with avatar) back into the store
       const idx = playerStore.players.findIndex((p) => p.id === player.id)
       if (idx !== -1) playerStore.players[idx] = player
     }
@@ -56,6 +60,19 @@ async function submit() {
           <option value="none">无</option>
         </select>
       </div>
+
+      <!-- Collapsible stats section -->
+      <div class="stats-section">
+        <button
+          type="button"
+          class="stats-toggle"
+          @click="showStats = !showStats"
+        >
+          ⚡ 球员属性 <span class="toggle-arrow">{{ showStats ? '▲' : '▼' }}</span>
+        </button>
+        <StatsEditor v-if="showStats" v-model="stats" />
+      </div>
+
       <div class="modal-actions">
         <button type="button" class="btn btn-warning" @click="emit('close')">取消</button>
         <button type="submit" class="btn btn-success">添加</button>
@@ -63,3 +80,31 @@ async function submit() {
     </form>
   </AppModal>
 </template>
+
+<style scoped>
+.stats-section {
+  margin: 8px 0;
+}
+
+.stats-toggle {
+  background: none;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--gray);
+  width: 100%;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.stats-toggle:hover {
+  background: #f5f5f5;
+}
+
+.toggle-arrow {
+  float: right;
+  font-size: 10px;
+}
+</style>

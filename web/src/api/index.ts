@@ -1,4 +1,4 @@
-import type { Player, Game, GameDetail, CreateGamePayload } from '../types'
+import type { Player, PlayerStats, Game, GameDetail, CreateGamePayload } from '../types'
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch('/api' + url, {
@@ -14,16 +14,16 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 export const playersApi = {
   list: () => request<Player[]>('/players'),
 
-  create: (name: string, position: string) =>
+  create: (name: string, position: string, stats?: Partial<PlayerStats>) =>
     request<Player>('/players', {
       method: 'POST',
-      body: JSON.stringify({ name, position }),
+      body: JSON.stringify({ name, position, ...stats }),
     }),
 
-  update: (id: number, name: string, position: string) =>
+  update: (id: number, name: string, position: string, stats?: Partial<PlayerStats>) =>
     request<Player>(`/players/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ name, position }),
+      body: JSON.stringify({ name, position, ...stats }),
     }),
 
   delete: (id: number) => request<null>(`/players/${id}`, { method: 'DELETE' }),

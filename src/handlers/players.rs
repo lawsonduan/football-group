@@ -10,13 +10,13 @@ use crate::{
     AppState,
 };
 
-const SELECT: &str = "SELECT id, name, position, avatar FROM players";
+const SELECT: &str =
+    "SELECT id, name, position, avatar, pac, sho, pas, dri, def, phy FROM players";
 
 pub async fn list_players(State(pool): State<AppState>) -> Result<Json<Vec<Player>>> {
-    let players =
-        sqlx::query_as::<_, Player>(&format!("{SELECT} ORDER BY id"))
-            .fetch_all(&pool)
-            .await?;
+    let players = sqlx::query_as::<_, Player>(&format!("{SELECT} ORDER BY id"))
+        .fetch_all(&pool)
+        .await?;
 
     Ok(Json(players))
 }
@@ -26,17 +26,32 @@ pub async fn create_player(
     Json(payload): Json<CreatePlayer>,
 ) -> Result<(StatusCode, Json<Player>)> {
     let position = payload.position.unwrap_or_else(|| "none".to_string());
+    let pac = payload.pac.unwrap_or(50);
+    let sho = payload.sho.unwrap_or(50);
+    let pas = payload.pas.unwrap_or(50);
+    let dri = payload.dri.unwrap_or(50);
+    let def = payload.def.unwrap_or(50);
+    let phy = payload.phy.unwrap_or(50);
 
-    let id = sqlx::query("INSERT INTO players (name, position) VALUES (?, ?)")
-        .bind(&payload.name)
-        .bind(&position)
-        .execute(&pool)
-        .await?
-        .last_insert_rowid();
+    let id = sqlx::query(
+        "INSERT INTO players (name, position, pac, sho, pas, dri, def, phy) \
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    )
+    .bind(&payload.name)
+    .bind(&position)
+    .bind(pac)
+    .bind(sho)
+    .bind(pas)
+    .bind(dri)
+    .bind(def)
+    .bind(phy)
+    .execute(&pool)
+    .await?
+    .last_insert_rowid();
 
     Ok((
         StatusCode::CREATED,
-        Json(Player { id, name: payload.name, position, avatar: None }),
+        Json(Player { id, name: payload.name, position, avatar: None, pac, sho, pas, dri, def, phy }),
     ))
 }
 
@@ -45,24 +60,38 @@ pub async fn update_player(
     Path(id): Path<i64>,
     Json(payload): Json<UpdatePlayer>,
 ) -> Result<Json<Player>> {
-    let existing =
-        sqlx::query_as::<_, Player>(&format!("{SELECT} WHERE id = ?"))
-            .bind(id)
-            .fetch_optional(&pool)
-            .await?
-            .ok_or_else(|| AppError::NotFound(format!("Player {} not found", id)))?;
-
-    let name = payload.name.unwrap_or(existing.name);
-    let position = payload.position.unwrap_or(existing.position);
-
-    sqlx::query("UPDATE players SET name = ?, position = ? WHERE id = ?")
-        .bind(&name)
-        .bind(&position)
+    let e = sqlx::query_as::<_, Player>(&format!("{SELECT} WHERE id = ?"))
         .bind(id)
-        .execute(&pool)
-        .await?;
+        .fetch_optional(&pool)
+        .await?
+        .ok_or_else(|| AppError::NotFound(format!("Player {} not found", id)))?;
 
-    Ok(Json(Player { id, name, position, avatar: existing.avatar }))
+    let name = payload.name.unwrap_or(e.name);
+    let position = payload.position.unwrap_or(e.position);
+    let pac = payload.pac.unwrap_or(e.pac);
+    let sho = payload.sho.unwrap_or(e.sho);
+    let pas = payload.pas.unwrap_or(e.pas);
+    let dri = payload.dri.unwrap_or(e.dri);
+    let def = payload.def.unwrap_or(e.def);
+    let phy = payload.phy.unwrap_or(e.phy);
+
+    sqlx::query(
+        "UPDATE players SET name=?, position=?, pac=?, sho=?, pas=?, dri=?, def=?, phy=? \
+         WHERE id=?",
+    )
+    .bind(&name)
+    .bind(&position)
+    .bind(pac)
+    .bind(sho)
+    .bind(pas)
+    .bind(dri)
+    .bind(def)
+    .bind(phy)
+    .bind(id)
+    .execute(&pool)
+    .await?;
+
+    Ok(Json(Player { id, name, position, avatar: e.avatar, pac, sho, pas, dri, def, phy }))
 }
 
 pub async fn delete_player(

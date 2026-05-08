@@ -124,6 +124,18 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Returns (pac, sho, pas, dri, def, phy) defaults by position.
+fn default_stats(position: &str) -> (i64, i64, i64, i64, i64, i64) {
+    match position {
+        "fw"  => (78, 80, 72, 78, 35, 65),
+        "mf"  => (72, 65, 80, 75, 60, 70),
+        "df"  => (70, 45, 65, 60, 82, 78),
+        "gk"  => (60, 15, 65, 45, 83, 75),
+        "all" => (73, 70, 73, 78, 57, 68),
+        _     => (50, 50, 50, 50, 50, 50),
+    }
+}
+
 async fn seed_default_players(pool: &sqlx::SqlitePool) -> anyhow::Result<()> {
     let (count,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM players")
         .fetch_one(pool)
@@ -135,11 +147,21 @@ async fn seed_default_players(pool: &sqlx::SqlitePool) -> anyhow::Result<()> {
 
     tracing::info!("Seeding {} default players", DEFAULT_PLAYERS.len());
     for (name, position) in DEFAULT_PLAYERS {
-        sqlx::query("INSERT INTO players (name, position) VALUES (?, ?)")
-            .bind(name)
-            .bind(position)
-            .execute(pool)
-            .await?;
+        let (pac, sho, pas, dri, def, phy) = default_stats(position);
+        sqlx::query(
+            "INSERT INTO players (name, position, pac, sho, pas, dri, def, phy) \
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        )
+        .bind(name)
+        .bind(position)
+        .bind(pac)
+        .bind(sho)
+        .bind(pas)
+        .bind(dri)
+        .bind(def)
+        .bind(phy)
+        .execute(pool)
+        .await?;
     }
 
     Ok(())

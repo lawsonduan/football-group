@@ -79,6 +79,12 @@ pub async fn upload_avatar(
             name: player.name,
             position: player.position,
             avatar: Some(filename),
+            pac: player.pac,
+            sho: player.sho,
+            pas: player.pas,
+            dri: player.dri,
+            def: player.def,
+            phy: player.phy,
         }));
     }
 
