@@ -38,7 +38,7 @@ jobs:
           cp 小作文.csv web/public/reports.csv
 
       - name: Build
-        run: npm run build
+        run: npm run build -- --base=/${{ github.event.repository.name }}/
         working-directory: web
 
       - uses: actions/upload-pages-artifact@v3
